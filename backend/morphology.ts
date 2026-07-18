@@ -217,7 +217,7 @@ export const STRATEGY_TIERS: Record<number, { label: string; emoji: string; colo
 // SPELLING POST-PROCESSOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Gauteng/modern dialect orthography correction (oa -> wa, oe -> we, ea -> ya)
+// Gauteng/modern dialect orthography correction (oa -> wa, oe -> we, ea -> ya, li -> di)
 // Known loanword corrections: mochini/mochene -> motjhene (Machine), enjini -> enjene (Engine)
 export function postProcessSpelling(word: string): string {
   if (!word) return '';
@@ -231,6 +231,9 @@ export function postProcessSpelling(word: string): string {
     .replace(/ea/g, 'ya')
     .replace(/Ea/g, 'Ya')
     .replace(/EA/g, 'YA')
+    .replace(/li/g, 'di')
+    .replace(/Li/g, 'Di')
+    .replace(/LI/g, 'DI')
     .replace(/mochini/gi, 'motjhene')
     .replace(/mochene/gi, 'motjhene')
     .replace(/enjini/gi, 'enjene')
@@ -877,7 +880,8 @@ di- (Class 8: instruments plural), N-/e- (Class 9: abstract), bo- (Class 14: abs
 
 ## ORTHOGRAPHY RULES
 - NO diacritics, macrons, or circumflexes. Use plain a-z only.
-- Use Gauteng spelling: wa (not oa), we (not oe), ya (not ea), jwale (not joale)
+- Use Gauteng spelling: wa (not oa), we (not oe), ya (not ea), jwale (not joale).
+- Modern Sesotho uses "di" instead of "li" (e.g. write "modimo" instead of "molimo", "dikobo" instead of "likobo", "senwamadi" instead of "senoamali"). Always apply this spelling pattern.
 
 ## REQUIRED OUTPUT FORMAT
 Return ONLY a JSON object (no markdown). Follow this exact structure:
