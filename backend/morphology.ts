@@ -811,6 +811,7 @@ export async function coinWord(englishWord: string, userHint?: string): Promise<
   // ── AI-Powered Coining via Gemini ──
   if (GEMINI_API_KEY) {
     try {
+      const defStack = await fetchDefinitionStack(cleanWord, GEMINI_API_KEY);
       const userHintSection = userHint 
         ? `\nUser Suggestion / Hint: The user has suggested "${userHint}". You MUST incorporate this hint into at least one candidate. If it's a complete word, include it as a "User Suggestion" type AND also try to use it as a root for a semantic or compound candidate.`
         : '';
@@ -837,6 +838,14 @@ export async function coinWord(englishWord: string, userHint?: string): Promise<
 
 Your task: Coin Sesotho words for the English STEM term: "${englishWord}"
 ${userHintSection}
+
+## DEFINITION STACK & SEMANTIC ANATOMY OF "${englishWord}"
+Primary Definition: "${defStack.primaryDefinition}"
+
+To help you construct organic, natural-sounding Sesotho words that feel native rather than weird kapa literal, here are the definitions of the key concepts and building blocks that make up this definition:
+${defStack.keyConcepts.map(kc => `- **${kc.term}**: ${kc.definition}`).join('\n')}
+
+Use the definitions of these component concepts to inform how you build, compound, and nominalize Sesotho words, ensuring the resulting translations capture the functional and physical essence of the term in natural Sesotho.
 
 ## CONCEPT DECOMPOSITION (Do this first!)
 Before coining, decompose the concept:
