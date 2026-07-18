@@ -168,6 +168,8 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
   const status = req.query.status as string | undefined; // 'pending' | 'approved' | 'declined'
   const sortBy = req.query.sortBy as string | undefined; // 'votes' | 'alphabetical' | 'recent'
   const letter = req.query.letter as string | undefined; // 'A' | 'B' | ... | 'Z'
+  const page = parseInt(req.query.page as string || '1', 10);
+  const limit = parseInt(req.query.limit as string || '10', 10);
   
   // Optional auth token verification for personal vote detection
   const authHeader = req.headers['authorization'];
@@ -259,8 +261,7 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
           return sql`${englishLexicon.word} ~* ${`\\y${escaped}\\y`}`;
         })() : undefined,
         letter ? ilike(englishLexicon.word, `${letter}%`) : undefined
-      ))
-      .limit(100);
+      ));
     }
 
     // 3. Combine both lists
@@ -316,7 +317,19 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
       }
     }
 
-    res.json(sorted.slice(0, 100));
+    const total = sorted.length;
+    const totalPages = Math.ceil(total / limit);
+    const pageNum = Math.max(1, Math.min(page, totalPages || 1));
+    const offset = (pageNum - 1) * limit;
+    const pagedWords = sorted.slice(offset, offset + limit);
+
+    res.json({
+      words: pagedWords,
+      total,
+      page: pageNum,
+      totalPages: totalPages || 1,
+      limit
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

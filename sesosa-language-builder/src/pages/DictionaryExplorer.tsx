@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Info, ThumbsUp, ThumbsDown, HelpCircle, Layers, Plus, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
+import { Search, Info, ThumbsUp, ThumbsDown, HelpCircle, Layers, Plus, Sparkles, BookOpen, AlertCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface Word {
   id: number;
@@ -24,6 +24,33 @@ interface DictionaryExplorerProps {
   token: string | null;
 }
 
+function getPageNumbers(current: number, total: number) {
+  const delta = 2;
+  const range: (number | string)[] = [];
+  const rangeWithDots: (number | string)[] = [];
+  let l: number | undefined;
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      range.push(i);
+    }
+  }
+
+  for (let i of range) {
+    if (l) {
+      if (typeof i === 'number' && i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (typeof i === 'number' && i - l !== 1) {
+        rangeWithDots.push('...');
+      }
+    }
+    rangeWithDots.push(i);
+    if (typeof i === 'number') l = i;
+  }
+
+  return rangeWithDots;
+}
+
 export default function DictionaryExplorer({ user, token }: DictionaryExplorerProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +66,12 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
   const [selectedLetter, setSelectedLetter] = useState<string>('');
   const [location, setLocation] = useLocation();
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalWords, setTotalWords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Synchronize URL search parameters with state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,6 +81,11 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
       setStatus('approved');
     }
   }, [location, window.location.search]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, category, status, sortBy, selectedLetter, limit]);
 
   const fetchWords = async () => {
     setLoading(true);
@@ -63,6 +101,8 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
         category,
         status,
         sortBy,
+        page: page.toString(),
+        limit: limit.toString()
       };
       if (selectedLetter) {
         params.letter = selectedLetter;
@@ -74,14 +114,26 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
         throw new Error('Failed to fetch words');
       }
       const data = await response.json();
-      setWords(data);
+
+      let fetchedWords: Word[] = [];
+      if (Array.isArray(data)) {
+        fetchedWords = data;
+        setTotalWords(data.length);
+        setTotalPages(Math.ceil(data.length / limit));
+      } else {
+        fetchedWords = data.words || [];
+        setTotalWords(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+      }
+
+      setWords(fetchedWords);
 
       // Auto-switch active tab based on search matches if we got results but not under current status
-      if (search.trim() && data.length > 0) {
+      if (search.trim() && fetchedWords.length > 0) {
         const cleanQuery = search.trim().toLowerCase();
         
         // 1. Check for an exact match (either English or Sesotho word)
-        const exactMatch = data.find((w: any) => 
+        const exactMatch = fetchedWords.find((w: any) => 
           w.englishWord.toLowerCase() === cleanQuery || 
           w.sesothoWord.toLowerCase() === cleanQuery
         );
@@ -90,12 +142,12 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
           setStatus(exactMatch.status as any);
         } else {
           // 2. Fall back to priority list if no exact match or already on exact match tab
-          const hasApproved = data.some((w: any) => w.status === 'approved');
-          const hasPending = data.some((w: any) => w.status === 'pending');
-          const hasDeclined = data.some((w: any) => w.status === 'declined');
-          const hasUntranslated = data.some((w: any) => w.status === 'untranslated');
+          const hasApproved = fetchedWords.some((w: any) => w.status === 'approved');
+          const hasPending = fetchedWords.some((w: any) => w.status === 'pending');
+          const hasDeclined = fetchedWords.some((w: any) => w.status === 'declined');
+          const hasUntranslated = fetchedWords.some((w: any) => w.status === 'untranslated');
 
-          const currentStatusHasMatches = data.some((w: any) => w.status === status);
+          const currentStatusHasMatches = fetchedWords.some((w: any) => w.status === status);
 
           if (!currentStatusHasMatches) {
             if (hasApproved) {
@@ -123,7 +175,7 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [search, category, status, sortBy, selectedLetter]);
+  }, [search, category, status, sortBy, selectedLetter, page, limit]);
 
   const handleVote = async (wordId: number, currentVote: 'up' | 'down' | null, targetVote: 'up' | 'down') => {
     if (!token) {
@@ -537,12 +589,83 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
             </div>
           ) : (
             <>
-              {words.length === 100 && (
-                <div className="glass-panel flex-center gap-sm" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', border: '1px solid rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.04)', color: '#22d3ee', fontSize: '0.9rem', width: '100%' }}>
-                  <Info size={16} />
-                  <span>Hlahisa mantsoe a 100 a pele. Tsoela pele ho batla ho fokotsa sephetho (Showing the first 100 matches. Continue typing to refine search).</span>
+              {/* Top Pagination Control Bar */}
+              <div className="glass-panel flex-between" style={{ padding: '0.85rem 1.25rem', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  E bontsha <strong style={{ color: '#fff' }}>{((page - 1) * limit) + 1}</strong> - <strong style={{ color: '#fff' }}>{Math.min(page * limit, totalWords)}</strong> ho mantsoe a <strong style={{ color: 'var(--primary)' }}>{totalWords.toLocaleString()}</strong>
                 </div>
-              )}
+
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage(1)}
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: page === 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                        padding: '0.35rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: page === 1 ? 'not-allowed' : 'pointer'
+                      }}
+                      title="Qala (First)"
+                    >
+                      <ChevronsLeft size={16} />
+                    </button>
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: page === 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                        padding: '0.35rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: page === 1 ? 'not-allowed' : 'pointer'
+                      }}
+                      title="Pele (Previous)"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', padding: '0 0.4rem' }}>
+                      Leqephe {page} / {totalPages}
+                    </span>
+
+                    <button
+                      disabled={page === totalPages}
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: page === totalPages ? 'rgba(255,255,255,0.2)' : 'white',
+                        padding: '0.35rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                      }}
+                      title="E Nngwe (Next)"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                    <button
+                      disabled={page === totalPages}
+                      onClick={() => setPage(totalPages)}
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: page === totalPages ? 'rgba(255,255,255,0.2)' : 'white',
+                        padding: '0.35rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                      }}
+                      title="Bofelo (Last)"
+                    >
+                      <ChevronsRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
               {words.map(word => {
                 const isUntranslated = word.status === 'untranslated';
@@ -672,6 +795,143 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
                 );
               })}
             </div>
+
+            {/* Bottom Full Pagination Bar */}
+            {totalPages > 1 && (
+              <div className="glass-panel" style={{ 
+                padding: '1rem 1.5rem', 
+                marginTop: '1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                flexWrap: 'wrap', 
+                gap: '1rem',
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  E bontsha <strong style={{ color: '#fff' }}>{((page - 1) * limit) + 1}</strong> - <strong style={{ color: '#fff' }}>{Math.min(page * limit, totalWords)}</strong> ho mantsoe a <strong style={{ color: 'var(--primary-light)' }}>{totalWords.toLocaleString()}</strong>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  {/* First Page */}
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(1)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: page === 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: page === 1 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Qala (First)"
+                  >
+                    <ChevronsLeft size={16} />
+                  </button>
+
+                  {/* Prev Page */}
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: page === 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: page === 1 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Pele (Previous)"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  {/* Page Numbers */}
+                  {getPageNumbers(page, totalPages).map((p, idx) => (
+                    typeof p === 'number' ? (
+                      <button
+                        key={idx}
+                        onClick={() => setPage(p)}
+                        style={{
+                          background: page === p ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
+                          color: 'white',
+                          border: page === p ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                          padding: '0.4rem 0.75rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.85rem',
+                          fontWeight: page === p ? 700 : 500,
+                          cursor: 'pointer',
+                          minWidth: '32px'
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ) : (
+                      <span key={idx} style={{ color: 'var(--text-muted)', padding: '0 0.2rem' }}>...</span>
+                    )
+                  ))}
+
+                  {/* Next Page */}
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: page === totalPages ? 'rgba(255,255,255,0.2)' : 'white',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="E Nngwe (Next)"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+
+                  {/* Last Page */}
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(totalPages)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: page === totalPages ? 'rgba(255,255,255,0.2)' : 'white',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Bofelo (Last)"
+                  >
+                    <ChevronsRight size={16} />
+                  </button>
+                </div>
+
+                {/* Limit Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span>Limiti ka leqephe:</span>
+                  <select
+                    value={limit}
+                    onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                    className="form-input form-select"
+                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.85rem', width: 'auto' }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+              </div>
+            )}
             </>
           )}
         </main>
