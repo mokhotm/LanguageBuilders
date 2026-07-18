@@ -208,11 +208,15 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
       .where(and(
         status && !search ? eq(dictionaryWords.status, status as any) : undefined,
         category && category !== 'all' ? eq(dictionaryWords.category, category as any) : undefined,
-        search ? or(
-          ilike(dictionaryWords.englishWord, `%${search}%`),
-          ilike(dictionaryWords.sesothoWord, `%${search}%`),
-          ilike(dictionaryWords.definition, `%${search}%`)
-        ) : undefined,
+        search ? (() => {
+          const escaped = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const pattern = `\\y${escaped}\\y`;
+          return or(
+            sql`${dictionaryWords.englishWord} ~* ${pattern}`,
+            sql`${dictionaryWords.sesothoWord} ~* ${pattern}`,
+            sql`${dictionaryWords.definition} ~* ${pattern}`
+          );
+        })() : undefined,
         letter ? ilike(dictionaryWords.sesothoWord, `${letter}%`) : undefined
       ))
       .groupBy(dictionaryWords.id, users.username);
@@ -250,7 +254,10 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
       )
       .where(and(
         sql`${dictionaryWords.id} IS NULL`, // no approved/pending translation exists
-        search ? ilike(englishLexicon.word, `%${search}%`) : undefined,
+        search ? (() => {
+          const escaped = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          return sql`${englishLexicon.word} ~* ${`\\y${escaped}\\y`}`;
+        })() : undefined,
         letter ? ilike(englishLexicon.word, `${letter}%`) : undefined
       ))
       .limit(100);
