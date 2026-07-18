@@ -473,10 +473,7 @@ router.post('/words/:id/vote', authenticateToken, async (req: AuthRequest, res: 
       if (existing) {
         await db.delete(votes).where(eq(votes.id, existing.id));
       }
-      return res.json({ success: true, message: 'Vote removed' });
-    }
-
-    if (existing) {
+    } else if (existing) {
       // Update vote type
       await db.update(votes).set({ voteType }).where(eq(votes.id, existing.id));
     } else {
@@ -488,24 +485,38 @@ router.post('/words/:id/vote', authenticateToken, async (req: AuthRequest, res: 
       });
     }
 
-    // Auto-Approve logic: Check net votes
+    // Recalculate net votes
     const wordVotes = await db.select({
       upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'up' THEN 1 ELSE 0 END), 0)::integer`,
       downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'down' THEN 1 ELSE 0 END), 0)::integer`,
     }).from(votes).where(eq(votes.wordId, wordId));
     
-    let isAutoApproved = false;
-    if (wordVotes.length > 0) {
-      const netVotes = wordVotes[0].upvotes - wordVotes[0].downvotes;
-      if (netVotes >= 100) {
-        await db.update(dictionaryWords)
-          .set({ status: 'approved', approvedAt: new Date() })
-          .where(eq(dictionaryWords.id, wordId));
-        isAutoApproved = true;
-      }
+    const upvotes = wordVotes[0]?.upvotes || 0;
+    const downvotes = wordVotes[0]?.downvotes || 0;
+    const netVotes = upvotes - downvotes;
+    let newStatus: string | null = null;
+
+    // Community auto-approval / auto-decline thresholds
+    if (netVotes >= 3) {
+      await db.update(dictionaryWords)
+        .set({ status: 'approved', approvedAt: new Date() })
+        .where(eq(dictionaryWords.id, wordId));
+      newStatus = 'approved';
+    } else if (netVotes <= -3) {
+      await db.update(dictionaryWords)
+        .set({ status: 'declined' })
+        .where(eq(dictionaryWords.id, wordId));
+      newStatus = 'declined';
     }
 
-    res.json({ success: true, autoApproved: isAutoApproved });
+    res.json({ 
+      success: true, 
+      upvotes, 
+      downvotes, 
+      netVotes, 
+      userVote: voteType,
+      status: newStatus 
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
