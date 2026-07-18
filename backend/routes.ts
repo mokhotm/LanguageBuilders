@@ -118,6 +118,49 @@ router.get('/auth/me', authenticateToken, (req: AuthRequest, res: Response) => {
   res.json({ user: req.user });
 });
 
+// Helper function to calculate relevance score for matching words
+function calculateRelevance(word: any, query: string): number {
+  const q = query.toLowerCase().trim();
+  const english = word.englishWord.toLowerCase();
+  const sesotho = word.sesothoWord.toLowerCase();
+  const definition = word.definition ? word.definition.toLowerCase() : '';
+
+  // 1. Exact match on English word
+  if (english === q) return 100;
+  // 2. Exact match on Sesotho word
+  if (sesotho === q) return 95;
+
+  // 3. Exact word match in English word (using word boundaries)
+  // e.g. "rope" matches "rope (Afr: tou)" as a whole word
+  const englishWords = english.split(/[^a-zA-Z0-9]+/);
+  if (englishWords.includes(q)) return 80;
+
+  // 4. Exact word match in Sesotho word
+  const sesothoWords = sesotho.split(/[^a-zA-Z0-9]+/);
+  if (sesothoWords.includes(q)) return 75;
+
+  // 5. English word starts with query
+  if (english.startsWith(q)) return 60;
+  // 6. Sesotho word starts with query
+  if (sesotho.startsWith(q)) return 55;
+
+  // 7. Exact word match in definition
+  const defWords = definition.split(/[^a-zA-Z0-9]+/);
+  if (defWords.includes(q)) return 40;
+
+  // 8. Definition starts with query
+  if (definition.startsWith(q)) return 30;
+
+  // 9. Substring match in English word
+  if (english.includes(q)) return 20;
+  // 10. Substring match in Sesotho word
+  if (sesotho.includes(q)) return 15;
+  // 11. Substring match in definition
+  if (definition.includes(q)) return 10;
+
+  return 0;
+}
+
 // 4. Fetch Dictionary Words (With Search, Filter, Vote Tallies)
 router.get('/words', async (req: AuthRequest, res: Response) => {
   const search = req.query.search as string | undefined;
@@ -218,21 +261,52 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
 
     // Apply sorting in memory
     let sorted = [...combined];
-    if (sortBy === 'votes') {
+    if (search) {
+      // Pre-calculate relevance scores to avoid re-calculating during sorting
+      const scores = new Map<string, number>();
+      const getScore = (w: any) => {
+        const key = `${w.id}-${w.englishWord}-${w.sesothoWord}`;
+        if (scores.has(key)) return scores.get(key)!;
+        const score = calculateRelevance(w, search);
+        scores.set(key, score);
+        return score;
+      };
+
       sorted.sort((a, b) => {
-        const netA = a.upvotes - a.downvotes;
-        const netB = b.upvotes - b.downvotes;
-        return netB - netA; // descending
-      });
-    } else if (sortBy === 'alphabetical') {
-      sorted.sort((a, b) => a.englishWord.localeCompare(b.englishWord));
-    } else {
-      // Default: 'recent', keeping untranslated at the end so approved/pending show first
-      sorted.sort((a, b) => {
+        const scoreA = getScore(a);
+        const scoreB = getScore(b);
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA; // sort by relevance descending
+        }
+        // Tie-breaker: put untranslated at the end
         if (a.status === 'untranslated' && b.status !== 'untranslated') return 1;
         if (a.status !== 'untranslated' && b.status === 'untranslated') return -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        // Tie-breaker 2: sortBy preferences
+        if (sortBy === 'votes') {
+          return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
+        } else if (sortBy === 'alphabetical') {
+          return a.englishWord.localeCompare(b.englishWord);
+        } else {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
       });
+    } else {
+      // Standard non-search sorting
+      if (sortBy === 'votes') {
+        sorted.sort((a, b) => {
+          const netA = a.upvotes - a.downvotes;
+          const netB = b.upvotes - b.downvotes;
+          return netB - netA;
+        });
+      } else if (sortBy === 'alphabetical') {
+        sorted.sort((a, b) => a.englishWord.localeCompare(b.englishWord));
+      } else {
+        sorted.sort((a, b) => {
+          if (a.status === 'untranslated' && b.status !== 'untranslated') return 1;
+          if (a.status !== 'untranslated' && b.status === 'untranslated') return -1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+      }
     }
 
     res.json(sorted.slice(0, 100));
