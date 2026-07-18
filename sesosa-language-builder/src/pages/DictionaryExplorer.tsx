@@ -27,7 +27,10 @@ interface DictionaryExplorerProps {
 export default function DictionaryExplorer({ user, token }: DictionaryExplorerProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('search') || '';
+  });
   const [category, setCategory] = useState('all');
   const [status, setStatus] = useState<'approved' | 'pending' | 'declined' | 'untranslated'>('approved');
   const [sortBy, setSortBy] = useState('recent');
