@@ -793,7 +793,7 @@ function getStrategyTier(method: string): 1 | 2 | 3 | 4 | 5 {
   return map[method] || 5;
 }
 
-export async function coinWord(englishWord: string, userHint?: string): Promise<CoinResult> {
+export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
   const cleanWord = englishWord.toLowerCase().trim();
 
   // Check if we have high-quality curated entries (only if no user hint)
@@ -814,6 +814,10 @@ export async function coinWord(englishWord: string, userHint?: string): Promise<
       const defStack = await fetchDefinitionStack(cleanWord, GEMINI_API_KEY);
       const userHintSection = userHint 
         ? `\nUser Suggestion / Hint: The user has suggested "${userHint}". You MUST incorporate this hint into at least one candidate. If it's a complete word, include it as a "User Suggestion" type AND also try to use it as a root for a semantic or compound candidate.`
+        : '';
+
+      const excludeSection = excludeWords && excludeWords.length > 0
+        ? `\nCRITICAL EXCLUSION RULE: Do NOT generate any of the following previously generated Sesotho words: ${excludeWords.join(', ')}. You MUST generate COMPLETELY NEW, distinct candidates using alternative Sesotho roots, metaphors, and compounding derivations!`
         : '';
 
       // Build available roots context for the AI
@@ -838,6 +842,7 @@ export async function coinWord(englishWord: string, userHint?: string): Promise<
 
 Your task: Coin Sesotho words for the English STEM term: "${englishWord}"
 ${userHintSection}
+${excludeSection}
 
 ## DEFINITION STACK & SEMANTIC ANATOMY OF "${englishWord}"
 Primary Definition: "${defStack.primaryDefinition}"

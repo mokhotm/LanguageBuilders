@@ -60,8 +60,58 @@ export default function Workshop({ user, token }: WorkshopProps) {
   const [method, setMethod] = useState<string>('Semantic Calque');
   
   const [submitting, setSubmitting] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [, setLocation] = useLocation();
+
+  const handleGenerateMore = async () => {
+    if (!englishWord.trim() || loadingMore || synthesizing) return;
+
+    if (!token) {
+      alert('Kena pele u ka sebelisa workshop (Please login to synthesize words!)');
+      setLocation('/auth');
+      return;
+    }
+
+    setLoadingMore(true);
+    setErrorMsg(null);
+
+    const existingWords = candidates.map(c => c.sesothoWord);
+
+    try {
+      const response = await fetch('/api/words/synthesize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          englishWord, 
+          userHint,
+          excludeWords: existingWords
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate more words');
+      }
+
+      const data: CoinResult = await response.json();
+      const freshCandidates = (data.candidates || []).filter(
+        nc => !existingWords.some(ew => ew.toLowerCase() === nc.sesothoWord.toLowerCase())
+      );
+
+      if (freshCandidates.length === 0) {
+        alert('Ha ho na mantswe a mang a macha a fumanweng (No more unique word options found for this concept).');
+      } else {
+        setCandidates(prev => [...prev, ...freshCandidates]);
+      }
+    } catch (err: any) {
+      setErrorMsg('Error generating additional words: ' + err.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const runSynthesis = async (wordToSynthesize: string, hint: string = '') => {
     if (!wordToSynthesize.trim()) return;
@@ -335,9 +385,26 @@ export default function Workshop({ user, token }: WorkshopProps) {
         {/* Step 3: Generated Candidates with Strategy Tier Badges */}
         {candidates.length > 0 && (
           <section style={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 700 }}>
-              Likhetho tse Bopilwe (Generated Candidates)
-            </h2>
+            <div className="flex-between" style={{ marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700 }}>
+                Likhetho tse Bopilwe (Generated Candidates — {candidates.length})
+              </h2>
+              <button 
+                onClick={handleGenerateMore} 
+                disabled={loadingMore || synthesizing}
+                className="btn btn-secondary flex-center gap-sm"
+                style={{ 
+                  fontSize: '0.85rem', 
+                  padding: '0.55rem 1.1rem',
+                  border: '1px solid rgba(6,182,212,0.3)',
+                  background: 'rgba(6,182,212,0.08)',
+                  color: '#22d3ee'
+                }}
+              >
+                <Sparkles size={16} className={loadingMore ? 'spin' : ''} />
+                <span>{loadingMore ? 'E sa hlahisa mantswe a mang...' : '✨ Hlahisa Mantswe a Mang (Generate More Words)'}</span>
+              </button>
+            </div>
             
             <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', marginBottom: '2.5rem' }}>
               {candidates.map((cand, idx) => {

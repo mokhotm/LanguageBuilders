@@ -324,7 +324,7 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
 
 // 5. Coining Synthesizer (Heuristic + AI Suggestions)
 router.post('/words/synthesize', authenticateToken, async (req: AuthRequest, res: Response) => {
-  const { englishWord, userHint } = req.body;
+  const { englishWord, userHint, excludeWords } = req.body;
 
   if (!englishWord) {
     return res.status(400).json({ error: 'English word is required' });
@@ -333,58 +333,60 @@ router.post('/words/synthesize', authenticateToken, async (req: AuthRequest, res
   try {
     const cleanEng = englishWord.trim().toLowerCase();
 
-    // 1. Check if we have an approved translation in the database
-    const existingApproved = await db.select().from(dictionaryWords).where(
-      and(
-        ilike(dictionaryWords.englishWord, cleanEng),
-        eq(dictionaryWords.status, 'approved')
-      )
-    );
+    // 1. Check if we have an approved translation in the database (only if not generating additional options)
+    if (!excludeWords || excludeWords.length === 0) {
+      const existingApproved = await db.select().from(dictionaryWords).where(
+        and(
+          ilike(dictionaryWords.englishWord, cleanEng),
+          eq(dictionaryWords.status, 'approved')
+        )
+      );
 
-    // Filter out loanwords
-    const nonLoanwords = existingApproved.filter(w => {
-      try {
-        const morph = JSON.parse(w.morphology || '{}');
-        return morph.method !== 'Loanword';
-      } catch (_) {
-        return true; // assume not a loanword if JSON parsing fails
-      }
-    });
-
-    if (nonLoanwords.length > 0) {
-      const candidates = nonLoanwords.map(w => {
-        let explanation = 'Sefolelo sena se se se le teng ka har\'a buka ya mantswe (This translation already exists in the dictionary).';
-        let method = 'Semantic Extension';
+      // Filter out loanwords
+      const nonLoanwords = existingApproved.filter(w => {
         try {
           const morph = JSON.parse(w.morphology || '{}');
-          explanation = morph.explanation || explanation;
-          method = morph.method || method;
-        } catch (_) {}
+          return morph.method !== 'Loanword';
+        } catch (_) {
+          return true; // assume not a loanword if JSON parsing fails
+        }
+      });
 
-        return {
-          sesothoWord: w.sesothoWord,
-          method: method as any,
-          strategyTier: 1 as any,
-          explanation: `🏆 E se e le teng (Already exists): ${explanation}`,
-          definition: w.definition,
-          partOfSpeech: w.partOfSpeech,
+      if (nonLoanwords.length > 0) {
+        const candidates = nonLoanwords.map(w => {
+          let explanation = 'Sefolelo sena se se se le teng ka har\'a buka ya mantswe (This translation already exists in the dictionary).';
+          let method = 'Semantic Extension';
+          try {
+            const morph = JSON.parse(w.morphology || '{}');
+            explanation = morph.explanation || explanation;
+            method = morph.method || method;
+          } catch (_) {}
+
+          return {
+            sesothoWord: w.sesothoWord,
+            method: method as any,
+            strategyTier: 1 as any,
+            explanation: `🏆 E se e le teng (Already exists): ${explanation}`,
+            definition: w.definition,
+            partOfSpeech: w.partOfSpeech,
+            alreadyExists: true
+          };
+        });
+
+        return res.json({
+          candidates,
+          conceptDecomposition: {
+            whatItDoes: nonLoanwords[0].definition,
+            whatItIsLike: `Existing word in the dictionary`,
+            essence: `This concept is already mapped in standard Sesotho.`,
+            relatedSesothoRoots: [nonLoanwords[0].sesothoWord]
+          },
           alreadyExists: true
-        };
-      });
-
-      return res.json({
-        candidates,
-        conceptDecomposition: {
-          whatItDoes: nonLoanwords[0].definition,
-          whatItIsLike: `Existing word in the dictionary`,
-          essence: `This concept is already mapped in standard Sesotho.`,
-          relatedSesothoRoots: [nonLoanwords[0].sesothoWord]
-        },
-        alreadyExists: true
-      });
+        });
+      }
     }
 
-    const candidates = await coinWord(englishWord, userHint);
+    const candidates = await coinWord(englishWord, userHint, excludeWords);
     res.json(candidates);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
