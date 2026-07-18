@@ -137,12 +137,52 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    if (status === 'untranslated') {
-      const wordsList = await db.select({
+    // 1. Standard query for translated words
+    // If status is "untranslated", we skip translated words to return only untranslated ones.
+    let translatedList: any[] = [];
+    if (status !== 'untranslated') {
+      translatedList = await db.select({
+        id: dictionaryWords.id,
+        englishWord: dictionaryWords.englishWord,
+        sesothoWord: dictionaryWords.sesothoWord,
+        partOfSpeech: dictionaryWords.partOfSpeech,
+        category: dictionaryWords.category,
+        definition: dictionaryWords.definition,
+        morphology: dictionaryWords.morphology,
+        status: dictionaryWords.status,
+        createdBy: dictionaryWords.createdBy,
+        createdAt: dictionaryWords.createdAt,
+        creatorUsername: users.username,
+        upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'up' THEN 1 ELSE 0 END), 0)::integer`,
+        downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'down' THEN 1 ELSE 0 END), 0)::integer`,
+        userVote: currentUserId 
+          ? sql<string | null>`MAX(CASE WHEN ${votes.userId} = ${currentUserId} THEN ${votes.voteType} ELSE NULL END)`
+          : sql<string | null>`NULL`,
+      })
+      .from(dictionaryWords)
+      .leftJoin(users, eq(dictionaryWords.createdBy, users.id))
+      .leftJoin(votes, eq(dictionaryWords.id, votes.wordId))
+      .where(and(
+        status ? eq(dictionaryWords.status, status as any) : undefined,
+        category && category !== 'all' ? eq(dictionaryWords.category, category as any) : undefined,
+        search ? or(
+          ilike(dictionaryWords.englishWord, `%${search}%`),
+          ilike(dictionaryWords.sesothoWord, `%${search}%`),
+          ilike(dictionaryWords.definition, `%${search}%`)
+        ) : undefined,
+        letter ? ilike(dictionaryWords.sesothoWord, `${letter}%`) : undefined
+      ))
+      .groupBy(dictionaryWords.id, users.username);
+    }
+
+    // 2. If search is active or status is untranslated, fetch untranslated terms from englishLexicon
+    let untranslatedList: any[] = [];
+    if (search || status === 'untranslated') {
+      untranslatedList = await db.select({
         id: sql<number>`-1`,
         englishWord: englishLexicon.word,
         sesothoWord: sql<string>`''`,
-        partOfSpeech: sql<string>`'Noun (Class 9)'`,
+        partOfSpeech: sql<string>`'Noun'`,
         category: sql<string>`'general'`,
         definition: sql<string>`'Not yet translated.'`,
         morphology: sql<string>`'{}'`,
@@ -166,56 +206,18 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
         )
       )
       .where(and(
-        sql`${dictionaryWords.id} IS NULL`,
+        sql`${dictionaryWords.id} IS NULL`, // no approved/pending translation exists
         search ? ilike(englishLexicon.word, `%${search}%`) : undefined,
         letter ? ilike(englishLexicon.word, `${letter}%`) : undefined
       ))
       .limit(100);
-
-      let sorted = [...wordsList];
-      if (sortBy === 'alphabetical') {
-        sorted.sort((a, b) => a.englishWord.localeCompare(b.englishWord));
-      }
-      return res.json(sorted);
     }
 
-    // We build a subquery to count upvotes and downvotes
-    // Drizzle raw SQL expressions are handy for aggregate joins
-    const wordsList = await db.select({
-      id: dictionaryWords.id,
-      englishWord: dictionaryWords.englishWord,
-      sesothoWord: dictionaryWords.sesothoWord,
-      partOfSpeech: dictionaryWords.partOfSpeech,
-      category: dictionaryWords.category,
-      definition: dictionaryWords.definition,
-      morphology: dictionaryWords.morphology,
-      status: dictionaryWords.status,
-      createdBy: dictionaryWords.createdBy,
-      createdAt: dictionaryWords.createdAt,
-      creatorUsername: users.username,
-      upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'up' THEN 1 ELSE 0 END), 0)::integer`,
-      downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${votes.voteType} = 'down' THEN 1 ELSE 0 END), 0)::integer`,
-      userVote: currentUserId 
-        ? sql<string | null>`MAX(CASE WHEN ${votes.userId} = ${currentUserId} THEN ${votes.voteType} ELSE NULL END)`
-        : sql<string | null>`NULL`,
-    })
-    .from(dictionaryWords)
-    .leftJoin(users, eq(dictionaryWords.createdBy, users.id))
-    .leftJoin(votes, eq(dictionaryWords.id, votes.wordId))
-    .where(and(
-      status ? eq(dictionaryWords.status, status as any) : undefined,
-      category && category !== 'all' ? eq(dictionaryWords.category, category as any) : undefined,
-      search ? or(
-        ilike(dictionaryWords.englishWord, `%${search}%`),
-        ilike(dictionaryWords.sesothoWord, `%${search}%`),
-        ilike(dictionaryWords.definition, `%${search}%`)
-      ) : undefined,
-      letter ? ilike(dictionaryWords.sesothoWord, `${letter}%`) : undefined
-    ))
-    .groupBy(dictionaryWords.id, users.username);
+    // 3. Combine both lists
+    let combined = [...translatedList, ...untranslatedList];
 
-    // Apply sorting in memory or query. Since we aggregated, we can sort in-memory simply
-    let sorted = [...wordsList];
+    // Apply sorting in memory
+    let sorted = [...combined];
     if (sortBy === 'votes') {
       sorted.sort((a, b) => {
         const netA = a.upvotes - a.downvotes;
@@ -225,8 +227,12 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
     } else if (sortBy === 'alphabetical') {
       sorted.sort((a, b) => a.englishWord.localeCompare(b.englishWord));
     } else {
-      // Default: 'recent'
-      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      // Default: 'recent', keeping untranslated at the end so approved/pending show first
+      sorted.sort((a, b) => {
+        if (a.status === 'untranslated' && b.status !== 'untranslated') return 1;
+        if (a.status !== 'untranslated' && b.status === 'untranslated') return -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
     }
 
     res.json(sorted.slice(0, 100));
