@@ -109,7 +109,7 @@ export default function LandingPage() {
             background: 'rgba(10,15,30,0.8)',
             zIndex: 1
           }}>
-            <span className="badge badge-category" style={{ marginBottom: '1rem' }}>Physics / Fisiks</span>
+            <span className="badge badge-category" style={{ marginBottom: '1rem' }}>Physics / Thutamatla</span>
             <h3 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>matlakgohedi</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '1rem' }}>
               Noun (Class 6)<br/>

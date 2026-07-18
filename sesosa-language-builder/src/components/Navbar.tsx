@@ -34,7 +34,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         
         <Link href="/workshop" className={`nav-link flex-center gap-sm ${location === '/workshop' ? 'active' : ''}`}>
           <Hammer size={16} />
-          <span>Workshop</span>
+          <span>Sekolo sa Kaho</span>
         </Link>
 
         {user && user.role === 'moderator' && (
