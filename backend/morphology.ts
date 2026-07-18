@@ -793,6 +793,23 @@ function getStrategyTier(method: string): 1 | 2 | 3 | 4 | 5 {
   return map[method] || 5;
 }
 
+function isNaturalSesothoCandidate(word: string): boolean {
+  const clean = word.toLowerCase().trim();
+  // Reject hybrid frankenstein words containing English stems mixed with Sesotho prefixes or words
+  if (/(compu|compuo|computera|engin|techno|electr|syng)/i.test(clean) && /(^se|^mo|^le|^bo|^matla|^tsho|^di|^e|^ba)/i.test(clean)) {
+    return false;
+  }
+  // Reject words with double repetitive prefixes like 'sesecompuo'
+  if (/^(sese|lele|momo|bobo|didi)/i.test(clean)) {
+    return false;
+  }
+  // Reject hybrid compounds combining native words with English stems like 'matlakomputera'
+  if (/matla(komput|comput|engine|techno)/i.test(clean)) {
+    return false;
+  }
+  return true;
+}
+
 export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
   const cleanWord = englishWord.toLowerCase().trim();
 
@@ -859,27 +876,35 @@ Before coining, decompose the concept:
 3. What is its ESSENCE? (core abstract meaning)
 4. Which Sesotho roots relate to this concept?
 
+## 🛑 STRICT LINGUISTIC RULES (ABSOLUTE REQUIREMENT!)
+1. NO HYBRID FRANKENSTEIN WORDS: NEVER attach Bantu prefixes (like 'se-', 'le-', 'mo-') to English words or stems (e.g. ABSOLUTELY NO "sesecompuo", NO "matlakomputera", NO "secomputer", NO "leengine").
+2. USE 100% NATIVE SESOTHO ROOTS: Every semantic, compound, or nominalized word MUST be built entirely from authentic native Sesotho roots!
+   - Example (Computer): "sebaladipalo" (se- + bala + dipalo = number counter), "kelello ya motlakase" (electric brain/mind), "sesebedisi sa dipalo" (number tool/processor), "seamoheladintlha" (data receiver).
+3. NATURAL BANTU COMPOUNDING:
+   - Verb + Object compound: "se-" + Verb Root + Noun (e.g. "sebaladipalo").
+   - Associative phrase: Noun + 'wa'/'ya'/'sa'/'a' + Noun (e.g. "motshini wa dipalo", "kelello ya motlakase").
+   - Nominalized verb: "se-" + Verb Root + '-i' / '-o' (e.g. "sesebalisi", "sesebedisi", "searabeli").
+
 ## WORD COINING STRATEGIES (in priority order)
 
 ### TIER 1 — Semantic Calque (BEST — Chinese/Hebrew model)
-Translate the MEANING, not the sound. Ask "what does this thing DO?" and express that in Sesotho.
-Example: Chinese 电脑 = electric-brain = computer. Hebrew מחשב (machshev) from root ח-ש-ב (think/calculate).
-Use Sesotho roots to describe the concept functionally.
+Translate the MEANING, not the sound. Ask "what does this thing DO?" and express that in Sesotho using native roots.
+Example: Chinese 电脑 = electric-brain = computer (Sesotho: kelello ya motlakase). Hebrew מחשב (machshev) from root ח-ש-ב (think/calculate).
 
 ### TIER 2 — Compounding (German/Icelandic model)
 Combine two native Sesotho words into one descriptive compound.
-Example: German Flugzeug = flight-thing = airplane. Icelandic tölva = number-prophetess = computer.
+Example: German Flugzeug = flight-thing = airplane. Sesotho: sebaladipalo (number counter = computer/calculator).
 
 ### TIER 3 — Nominalization (Bantu/Arabic model)
-Derive a noun from a Sesotho verb using class prefixes (se-, mo-, le-, bo-) and suffixes (-i, -o, -ng).
-Example: ho bala (to count) → sebali (counting instrument).
+Derive a noun from a native Sesotho verb using class prefixes (se-, mo-, le-, bo-) and suffixes (-i, -o, -ng).
+Example: ho bala (to count) → sebali (counting instrument); ho sebalisa -> sesebalisi (computing device).
 
 ### TIER 4 — Semantic Extension
-Repurpose an existing Sesotho word by extending its meaning.
+Repurpose an existing native Sesotho word by extending its meaning.
 Example: Icelandic "sími" (long thread) → telephone.
 
 ### TIER 5 — Loanword (LAST RESORT — explicitly discourage)
-Only if absolutely no semantic alternative works. Must be phonetically adapted to CV syllable structure.
+Only if absolutely no native semantic alternative works. Must be a real, phonetically adapted borrowing (e.g. "khomphutha"), NOT a hybrid invention.
 
 ## Available Sesotho Roots
 ${rootSamples}
@@ -987,10 +1012,10 @@ Generate at least 4 candidates:
             relatedSesothoRoots: [],
           };
 
-          let finalCandidates = mapped;
+          let finalCandidates = mapped.filter(c => isNaturalSesothoCandidate(c.sesothoWord));
           if (excludeWords && excludeWords.length > 0) {
             const excludeSet = new Set(excludeWords.map(w => w.toLowerCase().trim()));
-            finalCandidates = mapped.filter(c => !excludeSet.has(c.sesothoWord.toLowerCase().trim()));
+            finalCandidates = finalCandidates.filter(c => !excludeSet.has(c.sesothoWord.toLowerCase().trim()));
           }
 
           return { candidates: finalCandidates, conceptDecomposition: decomposition };
