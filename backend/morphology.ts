@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { fetchDefinitionStack } from './definitionStack';
 
 dotenv.config();
 
@@ -234,6 +235,9 @@ export function postProcessSpelling(word: string): string {
     .replace(/li/g, 'di')
     .replace(/Li/g, 'Di')
     .replace(/LI/g, 'DI')
+    .replace(/^sy([aeiou])/i, 'sea$1')
+    .replace(/^Sy([aeiou])/i, 'Sea$1')
+    .replace(/aakany/gi, 'akany')
     .replace(/mochini/gi, 'motjhene')
     .replace(/mochene/gi, 'motjhene')
     .replace(/enjini/gi, 'enjene')
