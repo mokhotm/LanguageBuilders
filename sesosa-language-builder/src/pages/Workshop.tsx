@@ -264,7 +264,7 @@ export default function Workshop({ user, token }: WorkshopProps) {
         <section className="glass-panel" style={{ padding: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Hammer size={18} className="text-primary" />
-            <span>Enjene ya ho Bopa Mantswe (Synthesis Engine)</span>
+            <span>Setsamaisi sa ho Bopa Mantswe (Synthesis Engine)</span>
           </h2>
 
           <form onSubmit={handleSynthesize} className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', alignItems: 'end' }}>
