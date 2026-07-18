@@ -37,7 +37,17 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedLetter, setSelectedLetter] = useState<string>('');
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Synchronize URL search parameters with state
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('search') || '';
+    if (query !== search) {
+      setSearch(query);
+      setStatus('approved');
+    }
+  }, [location, window.location.search]);
 
   const fetchWords = async () => {
     setLoading(true);
@@ -68,18 +78,35 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
 
       // Auto-switch active tab based on search matches if we got results but not under current status
       if (search.trim() && data.length > 0) {
-        const hasApproved = data.some((w: any) => w.status === 'approved');
-        const hasPending = data.some((w: any) => w.status === 'pending');
-        const hasDeclined = data.some((w: any) => w.status === 'declined');
-        const hasUntranslated = data.some((w: any) => w.status === 'untranslated');
+        const cleanQuery = search.trim().toLowerCase();
+        
+        // 1. Check for an exact match (either English or Sesotho word)
+        const exactMatch = data.find((w: any) => 
+          w.englishWord.toLowerCase() === cleanQuery || 
+          w.sesothoWord.toLowerCase() === cleanQuery
+        );
 
-        if (status === 'approved' && !hasApproved) {
-          if (hasUntranslated) {
-            setStatus('untranslated');
-          } else if (hasPending) {
-            setStatus('pending');
-          } else if (hasDeclined) {
-            setStatus('declined');
+        if (exactMatch && exactMatch.status !== status) {
+          setStatus(exactMatch.status as any);
+        } else {
+          // 2. Fall back to priority list if no exact match or already on exact match tab
+          const hasApproved = data.some((w: any) => w.status === 'approved');
+          const hasPending = data.some((w: any) => w.status === 'pending');
+          const hasDeclined = data.some((w: any) => w.status === 'declined');
+          const hasUntranslated = data.some((w: any) => w.status === 'untranslated');
+
+          const currentStatusHasMatches = data.some((w: any) => w.status === status);
+
+          if (!currentStatusHasMatches) {
+            if (hasApproved) {
+              setStatus('approved');
+            } else if (hasPending) {
+              setStatus('pending');
+            } else if (hasUntranslated) {
+              setStatus('untranslated');
+            } else if (hasDeclined) {
+              setStatus('declined');
+            }
           }
         }
       }
