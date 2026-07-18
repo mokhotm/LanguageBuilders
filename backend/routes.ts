@@ -619,4 +619,34 @@ Keep your responses concise, engaging, and friendly. Use Markdown formatting.`;
   }
 });
 
+// 12. Batch Reprocess & Auto-Approve Endpoint
+router.post('/words/reprocess', async (req: Request, res: Response) => {
+  try {
+    // Auto-approve all existing pending words with valid Sesotho translations
+    const pendingWords = await db
+      .select()
+      .from(dictionaryWords)
+      .where(eq(dictionaryWords.status, 'pending'));
+
+    let autoApprovedCount = 0;
+    for (const word of pendingWords) {
+      if (word.sesothoWord && word.sesothoWord.trim().length > 0) {
+        await db
+          .update(dictionaryWords)
+          .set({ status: 'approved', approvedAt: new Date() })
+          .where(eq(dictionaryWords.id, word.id));
+        autoApprovedCount++;
+      }
+    }
+
+    res.json({
+      message: 'Reprocessing complete: all existing Sesotho translations auto-approved.',
+      autoApprovedCount,
+      totalPendingProcessed: pendingWords.length
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
