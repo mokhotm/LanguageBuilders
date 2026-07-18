@@ -580,10 +580,8 @@ router.get('/words/coverage', async (req: Request, res: Response) => {
     const totalRes = await db.select({ value: count() }).from(englishLexicon);
     const totalEnglishWords = totalRes[0].value;
 
-    const correlatedQuery = await db.execute(sql`
-      SELECT COUNT(DISTINCT english_word) as count FROM dictionary_words WHERE status = 'approved'
-    `);
-    const correlatedWords = Number(correlatedQuery.rows[0].count);
+    const approvedRes = await db.select({ value: count() }).from(dictionaryWords).where(eq(dictionaryWords.status, 'approved'));
+    const correlatedWords = approvedRes[0]?.value || 0;
 
     const coveragePercentage = totalEnglishWords > 0 ? (correlatedWords / totalEnglishWords) * 100 : 0;
 
