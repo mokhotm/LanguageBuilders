@@ -796,8 +796,8 @@ function getStrategyTier(method: string): 1 | 2 | 3 | 4 | 5 {
 export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
   const cleanWord = englishWord.toLowerCase().trim();
 
-  // Check if we have high-quality curated entries (only if no user hint)
-  if (!userHint && STEM_FALLBACKS[cleanWord]) {
+  // Check if we have high-quality curated entries (only if no user hint and no excludeWords)
+  if (!userHint && (!excludeWords || excludeWords.length === 0) && STEM_FALLBACKS[cleanWord]) {
     const entry = STEM_FALLBACKS[cleanWord];
     return {
       candidates: entry.candidates.map(c => ({
@@ -987,7 +987,13 @@ Generate at least 4 candidates:
             relatedSesothoRoots: [],
           };
 
-          return { candidates: mapped, conceptDecomposition: decomposition };
+          let finalCandidates = mapped;
+          if (excludeWords && excludeWords.length > 0) {
+            const excludeSet = new Set(excludeWords.map(w => w.toLowerCase().trim()));
+            finalCandidates = mapped.filter(c => !excludeSet.has(c.sesothoWord.toLowerCase().trim()));
+          }
+
+          return { candidates: finalCandidates, conceptDecomposition: decomposition };
         }
       }
     } catch (apiError: any) {
