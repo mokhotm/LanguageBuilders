@@ -228,7 +228,13 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
           <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Buka ya Mantswe a Sesotho</h1>
           <p style={{ color: 'var(--text-muted)' }}>Batla, vouta kapa u hlahlobe mantswe a bopilwe bakeng sa dithuto tsa STEM.</p>
         </div>
-        <button onClick={() => setLocation('/workshop')} className="btn btn-primary flex-center gap-sm">
+        <button 
+          onClick={() => {
+            const query = search.trim() ? `?word=${encodeURIComponent(search.trim())}` : '';
+            setLocation(`/workshop${query}`);
+          }} 
+          className="btn btn-primary flex-center gap-sm"
+        >
           <Plus size={18} />
           <span>Bopa Lentswe le Lecha</span>
         </button>
@@ -518,7 +524,13 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
                     Ha re na mantswe a tsamaellanang le di-filters tsena. U ka bopa le ho hlahisa lentswe le lecha hona jwale!
                   </p>
                 </div>
-              <button onClick={() => setLocation('/workshop')} className="btn btn-primary flex-center gap-sm">
+              <button 
+                onClick={() => {
+                  const query = search.trim() ? `?word=${encodeURIComponent(search.trim())}` : '';
+                  setLocation(`/workshop${query}`);
+                }} 
+                className="btn btn-primary flex-center gap-sm"
+              >
                 <Plus size={16} />
                 <span>Bopa Lentswe (Coin Now)</span>
               </button>

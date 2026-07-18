@@ -63,17 +63,8 @@ export default function Workshop({ user, token }: WorkshopProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const prefilledWord = params.get('word');
-    if (prefilledWord) {
-      setEnglishWord(decodeURIComponent(prefilledWord));
-    }
-  }, []);
-
-  const handleSynthesize = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!englishWord.trim()) return;
+  const runSynthesis = async (wordToSynthesize: string, hint: string = '') => {
+    if (!wordToSynthesize.trim()) return;
 
     if (!token) {
       alert('Kena pele u ka sebelisa workshop (Please login to synthesize words!)');
@@ -94,7 +85,7 @@ export default function Workshop({ user, token }: WorkshopProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ englishWord, userHint }),
+        body: JSON.stringify({ englishWord: wordToSynthesize, userHint: hint }),
       });
 
       if (!response.ok) {
@@ -109,6 +100,21 @@ export default function Workshop({ user, token }: WorkshopProps) {
     } finally {
       setSynthesizing(false);
     }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefilledWord = params.get('word');
+    if (prefilledWord) {
+      const clean = decodeURIComponent(prefilledWord);
+      setEnglishWord(clean);
+      runSynthesis(clean, '');
+    }
+  }, [window.location.search]);
+
+  const handleSynthesize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await runSynthesis(englishWord, userHint);
   };
 
   const selectCandidate = (c: Candidate) => {
