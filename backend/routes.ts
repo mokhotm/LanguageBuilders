@@ -163,7 +163,7 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
       .leftJoin(users, eq(dictionaryWords.createdBy, users.id))
       .leftJoin(votes, eq(dictionaryWords.id, votes.wordId))
       .where(and(
-        status ? eq(dictionaryWords.status, status as any) : undefined,
+        status && !search ? eq(dictionaryWords.status, status as any) : undefined,
         category && category !== 'all' ? eq(dictionaryWords.category, category as any) : undefined,
         search ? or(
           ilike(dictionaryWords.englishWord, `%${search}%`),
