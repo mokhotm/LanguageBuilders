@@ -65,6 +65,24 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
       }
       const data = await response.json();
       setWords(data);
+
+      // Auto-switch active tab based on search matches if we got results but not under current status
+      if (search.trim() && data.length > 0) {
+        const hasApproved = data.some((w: any) => w.status === 'approved');
+        const hasPending = data.some((w: any) => w.status === 'pending');
+        const hasDeclined = data.some((w: any) => w.status === 'declined');
+        const hasUntranslated = data.some((w: any) => w.status === 'untranslated');
+
+        if (status === 'approved' && !hasApproved) {
+          if (hasUntranslated) {
+            setStatus('untranslated');
+          } else if (hasPending) {
+            setStatus('pending');
+          } else if (hasDeclined) {
+            setStatus('declined');
+          }
+        }
+      }
     } catch (err: any) {
       setErrorMsg('Ho sitiloe ho fumana mantsoe. Suthisa kapa leka hape.');
     } finally {
