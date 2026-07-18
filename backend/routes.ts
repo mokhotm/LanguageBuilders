@@ -179,7 +179,7 @@ router.get('/words', async (req: AuthRequest, res: Response) => {
     let untranslatedList: any[] = [];
     if (search || status === 'untranslated') {
       untranslatedList = await db.select({
-        id: sql<number>`-1`,
+        id: sql<number>`-1 * ${englishLexicon.id}`,
         englishWord: englishLexicon.word,
         sesothoWord: sql<string>`''`,
         partOfSpeech: sql<string>`'Noun'`,
