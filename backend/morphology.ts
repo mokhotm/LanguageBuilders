@@ -781,56 +781,6 @@ definition: 'A molecule — the smallest unit of a chemical compound that retain
       },
     ],
   },
-  virus: {
-    decomposition: {
-      whatItDoes: 'A microscopic infectious agent that invades living cells and causes disease',
-      whatItIsLike: 'An invisible tiny creature that brings pain and sickness',
-      essence: 'A pain-causing tiny organism — too small to see, but devastating in effect',
-      relatedSesothoRoots: ['kokwana (tiny organism/insect)', 'bohloko (pain/suffering)', 'ho lwala (to be sick)', 'ho tshwaya (to infect)', 'ho hlasela (to attack/invade)'],
-    },
-    candidates: [
-      {
-        sesothoWord: 'kokwanahloko',
-        method: 'Semantic Calque',
-        strategyTier: 1,
-        root: 'kokwana (tiny organism) + hloko (from bohloko = pain)',
-        explanation: 'A REAL Sesotho word already in use by native speakers! "kokwana" (tiny organism/insect) + "hloko" (derived from bohloko = pain/suffering). Literally: "the tiny creature that brings pain". This is a perfect example of Sesotho\'s own organic compounding tradition — exactly the kind of word LBOS aims to produce. No borrowed sound, pure meaning.',
-        definition: 'A virus — a microscopic infectious agent that causes disease in living organisms.',
-        partOfSpeech: 'Noun (Class 9)',
-        inspiration: '🌍 Sesotho native tradition — proves the language already has the word-building capacity!',
-      },
-      {
-        sesothoWord: 'sehlaselibohloko',
-        method: 'Compounding',
-        strategyTier: 2,
-        explanation: 'Compound: "se-" (Class 7, instrument/agent) + "hlaseli" (from ho hlasela = to attack/invade) + "bohloko" (pain/sickness). Literally: "the tiny attacker that brings sickness". Emphasizes the invasive nature of viruses.',
-        definition: 'A virus — an invasive microscopic agent that attacks cells and causes illness.',
-        partOfSpeech: 'Noun (Class 7)',
-        inspiration: '🇩🇪 German compound model + native Sesotho roots',
-      },
-      {
-        sesothoWord: 'setshwayi',
-        method: 'Nominalization',
-        strategyTier: 3,
-        prefix: 'se-',
-        root: 'ho tshwaya (to infect/contaminate)',
-        suffix: '-i (agentive)',
-        explanation: 'From "ho tshwaya" (to infect/mark): "se-" (Class 7, agent) + "tshway-" + "-i". Literally: "the thing that infects".',
-        definition: 'A virus — an infectious agent.',
-        partOfSpeech: 'Noun (Class 7)',
-        inspiration: '🇮🇱 Hebrew root derivation model',
-      },
-      {
-        sesothoWord: 'baerase',
-        method: 'Loanword',
-        strategyTier: 5,
-        explanation: '⚠️ Phonetic borrowing of English "virus". Meaningless to a Sesotho speaker. The native word "kokwanahloko" (pain-causing tiny creature) is far superior — it already exists and is widely understood!',
-        definition: 'Virus (borrowed term — not recommended when "kokwanahloko" already exists).',
-        partOfSpeech: 'Noun (Class 9)',
-        inspiration: '⚠️ Last resort — "kokwanahloko" is the native word',
-      }
-    ],
-  },
   biology: {
     decomposition: {
       whatItDoes: 'The scientific study of life and living organisms, including their structure, growth, origin, and evolution',
