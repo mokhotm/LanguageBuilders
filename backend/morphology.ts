@@ -925,7 +925,17 @@ definition: 'A molecule — the smallest unit of a chemical compound that retain
   }
 };
 
-  export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
+  export function isNaturalSesothoCandidate(word: string): boolean {
+  if (!word) return false;
+  const w = word.toLowerCase().trim();
+  // Filter out invalid hybrid combinations (e.g. sesecompuo, matlakomputera)
+  if (w.startsWith('sesecomp') || w.startsWith('matlakomp') || w.startsWith('secomp')) {
+    return false;
+  }
+  return true;
+}
+
+export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
   const cleanWord = englishWord.toLowerCase().trim();
 
   // Check if we have high-quality curated entries (only if no user hint and no excludeWords)
