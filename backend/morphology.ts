@@ -1,6 +1,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { fetchDefinitionStack } from './definitionStack';
+import { generateLLMCompletion } from './llmProvider';
 
 dotenv.config();
 
@@ -772,95 +773,29 @@ const STEM_FALLBACKS: Record<string, { decomposition: ConceptDecomposition; cand
         method: 'Loanword',
         strategyTier: 5,
         explanation: '⚠️ Phonetic borrowing of English "power". Not recommended.',
-        definition: 'Power (borrowed term — not recommended).',
-        partOfSpeech: 'Noun (Class 9)',
-        inspiration: '⚠️ Last resort',
-      }
-    ],
-  },
-};
+        definition: 'Power (borrowed term �  // ── AI-Powered Coining via LLM Provider (Ollama Local / Gemini Cloud) ──
+  try {
+    const defStack = await fetchDefinitionStack(cleanWord, GEMINI_API_KEY);
+    const userHintSection = userHint 
+      ? `\nUser Suggestion / Hint: The user has suggested "${userHint}". You MUST incorporate this hint into at least one candidate. If it's a complete word, include it as a "User Suggestion" type AND also try to use it as a root for a semantic or compound candidate.`
+      : '';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN COINING ENGINE — AI-Powered with Concept Decomposition Pipeline
-// Inspired by: Chinese semantic calque, German compounding, Hebrew root
-// derivation, Icelandic purism, Arabic pattern system
-// ═══════════════════════════════════════════════════════════════════════════
+    const excludeSection = excludeWords && excludeWords.length > 0
+      ? `\nCRITICAL EXCLUSION RULE: Do NOT generate any of the following previously generated Sesotho words: ${excludeWords.join(', ')}. You MUST generate COMPLETELY NEW, distinct candidates using alternative Sesotho roots, metaphors, and compounding derivations!`
+      : '';
 
-function getStrategyTier(method: string): 1 | 2 | 3 | 4 | 5 {
-  const map: Record<string, 1 | 2 | 3 | 4 | 5> = {
-    'Semantic Calque': 1,
-    'Compounding': 2,
-    'Nominalization': 3,
-    'Semantic Extension': 4,
-    'Loanword': 5,
-    'User Suggestion': 1, // user suggestions are honored at highest tier
-  };
-  return map[method] || 5;
-}
+    // Build available roots context for the AI
+    const rootSamples = Object.entries(SESOTHO_ROOTS.verbs)
+      .slice(0, 30)
+      .map(([verb, info]) => `ho ${verb}: ${info.meaning}`)
+      .join('\n');
+    
+    const nounSamples = Object.entries(SESOTHO_ROOTS.nouns)
+      .slice(0, 25)
+      .map(([noun, info]) => `${noun}: ${info.meaning} (Class ${info.class})`)
+      .join('\n');
 
-function isNaturalSesothoCandidate(word: string): boolean {
-  const clean = word.toLowerCase().trim();
-  // Reject hybrid frankenstein words containing English stems mixed with Sesotho prefixes or words
-  if (/(compu|compuo|computera|engin|techno|electr|syng)/i.test(clean) && /(^se|^mo|^le|^bo|^matla|^tsho|^di|^e|^ba)/i.test(clean)) {
-    return false;
-  }
-  // Reject words with double repetitive prefixes like 'sesecompuo'
-  if (/^(sese|lele|momo|bobo|didi)/i.test(clean)) {
-    return false;
-  }
-  // Reject hybrid compounds combining native words with English stems like 'matlakomputera'
-  if (/matla(komput|comput|engine|techno)/i.test(clean)) {
-    return false;
-  }
-  return true;
-}
-
-export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
-  const cleanWord = englishWord.toLowerCase().trim();
-
-  // Check if we have high-quality curated entries (only if no user hint and no excludeWords)
-  if (!userHint && (!excludeWords || excludeWords.length === 0) && STEM_FALLBACKS[cleanWord]) {
-    const entry = STEM_FALLBACKS[cleanWord];
-    return {
-      candidates: entry.candidates.map(c => ({
-        ...c,
-        sesothoWord: postProcessSpelling(c.sesothoWord),
-      })),
-      conceptDecomposition: entry.decomposition,
-    };
-  }
-
-  // ── AI-Powered Coining via Gemini ──
-  if (GEMINI_API_KEY) {
-    try {
-      const defStack = await fetchDefinitionStack(cleanWord, GEMINI_API_KEY);
-      const userHintSection = userHint 
-        ? `\nUser Suggestion / Hint: The user has suggested "${userHint}". You MUST incorporate this hint into at least one candidate. If it's a complete word, include it as a "User Suggestion" type AND also try to use it as a root for a semantic or compound candidate.`
-        : '';
-
-      const excludeSection = excludeWords && excludeWords.length > 0
-        ? `\nCRITICAL EXCLUSION RULE: Do NOT generate any of the following previously generated Sesotho words: ${excludeWords.join(', ')}. You MUST generate COMPLETELY NEW, distinct candidates using alternative Sesotho roots, metaphors, and compounding derivations!`
-        : '';
-
-      // Build available roots context for the AI
-      const rootSamples = Object.entries(SESOTHO_ROOTS.verbs)
-        .slice(0, 30)
-        .map(([verb, info]) => `ho ${verb}: ${info.meaning}`)
-        .join('\n');
-      
-      const nounSamples = Object.entries(SESOTHO_ROOTS.nouns)
-        .slice(0, 25)
-        .map(([noun, info]) => `${noun}: ${info.meaning} (Class ${info.class})`)
-        .join('\n');
-
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are MzansiLLM, an expert in Sesotho (Southern Sotho) STEM word creation, aligned with UCT's MzansiLLM project.
+    const promptText = `You are MzansiLLM, an expert in Sesotho (Southern Sotho) STEM word creation, aligned with UCT's MzansiLLM project.
 
 Your task: Coin Sesotho words for the English STEM term: "${englishWord}"
 ${userHintSection}
@@ -910,6 +845,58 @@ Example: Icelandic "sími" (long thread) → telephone.
 
 ### TIER 5 — Loanword (LAST RESORT — explicitly discourage)
 Only if absolutely no native semantic alternative works. Must be a real, phonetically adapted borrowing (e.g. "khomphutha"), NOT a hybrid invention.
+
+## Available Sesotho Roots
+${rootSamples}
+
+## Available Sesotho Nouns
+${nounSamples}
+
+## Noun Class Prefixes
+mo- (Class 1: person), ba- (Class 2: people), mo- (Class 3: nature), me- (Class 4: plural nature),
+le- (Class 5: augmentative), ma- (Class 6: mass/collection), se- (Class 7: instrument/tool),
+di- (Class 8: instruments plural), N-/e- (Class 9: abstract), bo- (Class 14: abstract quality), ho- (Class 15: infinitive)
+
+## ORTHOGRAPHY RULES
+- NO diacritics, macrons, or circumflexes. Use plain a-z only.
+- Use Gauteng spelling: wa (not oa), we (not oe), ya (not ea), jwale (not joale).
+- Modern Sesotho uses "di" instead of "li" (e.g. write "modimo" instead of "molimo", "dikobo" instead of "likobo", "senwamadi" instead of "senoamali"). Always apply this spelling pattern.
+
+## REQUIRED OUTPUT FORMAT
+Return ONLY a valid JSON object matching this exact structure:
+{
+  "conceptDecomposition": {
+    "whatItDoes": "string",
+    "whatItIsLike": "string",
+    "essence": "string",
+    "relatedSesothoRoots": ["string array of relevant ho-verb and noun roots"]
+  },
+  "candidates": [
+    {
+      "sesothoWord": "string",
+      "method": "Semantic Calque" | "Compounding" | "Nominalization" | "Semantic Extension" | "Loanword",
+      "strategyTier": 1-5,
+      "prefix": "string or null",
+      "root": "string (the Sesotho root verb or noun used)",
+      "suffix": "string or null",
+      "explanation": "Detailed linguistic explanation including which world language model inspired it",
+      "definition": "Clear English definition of the term",
+      "partOfSpeech": "Noun (Class X)" or "Verb",
+      "inspiration": "e.g. Chinese: 电脑 = electric-brain"
+    }
+  ]
+}
+
+Generate at least 4 candidates:
+- At least 1 Semantic Calque (Tier 1)
+- At least 1 Compound (Tier 2)  
+- At least 1 Nominalization (Tier 3)
+- Exactly 1 Loanword (Tier 5) — mark it as "not recommended"`;
+
+    const jsonText = await generateLLMCompletion(promptText, { jsonMode: true, temperature: 0.3 });
+    if (jsonText) {
+      const cleanJson = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);if absolutely no native semantic alternative works. Must be a real, phonetically adapted borrowing (e.g. "khomphutha"), NOT a hybrid invention.
 
 ## Available Sesotho Roots
 ${rootSamples}

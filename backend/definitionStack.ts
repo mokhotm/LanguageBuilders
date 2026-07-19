@@ -1,25 +1,18 @@
-import axios from 'axios';
+import { generateLLMCompletion } from './llmProvider';
 
 export interface DefinitionStack {
   primaryDefinition: string;
   keyConcepts: { term: string; definition: string }[];
 }
 
-export async function fetchDefinitionStack(word: string, apiKey: string): Promise<DefinitionStack> {
+export async function fetchDefinitionStack(word: string, apiKey?: string): Promise<DefinitionStack> {
   try {
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are a technical lexicographer. For the STEM word "${word}", build a structured definition stack:
+    const prompt = `You are a technical lexicographer. For the STEM word "${word}", build a structured definition stack:
 1. Write a clear, standard definition of the word.
 2. Extract the key technical terms/concepts used in that definition.
 3. Define each of those extracted terms in the same context.
 
-Return ONLY a JSON object matching this schema:
+Return ONLY a valid JSON object matching this schema:
 {
   "primaryDefinition": "Definition of ${word}",
   "keyConcepts": [
@@ -28,27 +21,16 @@ Return ONLY a JSON object matching this schema:
       "definition": "term definition"
     }
   ]
-}`
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 30000
-      }
-    );
+}`;
 
-    const jsonText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const jsonText = await generateLLMCompletion(prompt, { jsonMode: true, temperature: 0.2 });
     if (jsonText) {
-      return JSON.parse(jsonText);
+      // Clean potential markdown codeblock wrappers if present
+      const cleanJson = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
     }
   } catch (err: any) {
-    console.warn("Failed to fetch definition stack, using empty defaults:", err.message);
+    console.warn(`Failed to fetch definition stack for "${word}", using default:`, err.message);
   }
   return {
     primaryDefinition: `The technical term representing ${word}.`,
