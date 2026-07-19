@@ -1,4 +1,4 @@
-import { generateLLMCompletion, isOllamaAvailable, getOllamaModels } from './llmProvider';
+import { generateLLMCompletion, isOllamaAvailable, getOllamaModels } from './llmProvider.js';
 
 async function testOllama() {
   console.log('--- TESTING OLLAMA INTEGRATION ---');

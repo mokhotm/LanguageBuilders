@@ -1,7 +1,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { fetchDefinitionStack } from './definitionStack';
-import { generateLLMCompletion } from './llmProvider';
+import { fetchDefinitionStack } from './definitionStack.js';
+import { generateLLMCompletion } from './llmProvider.js';
 
 dotenv.config();
 
@@ -763,6 +763,201 @@ const STEM_FALLBACKS: Record<string, { decomposition: ConceptDecomposition; cand
         sesothoWord: 'matla a tshebediso',
         method: 'Compounding',
         strategyTier: 2,
+definition: 'A molecule — the smallest unit of a chemical compound that retains its chemical properties.',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '🇨🇳 Chinese: 分子 = divide-particle',
+      },
+      {
+        sesothoWord: 'sekopanyi',
+        method: 'Nominalization',
+        strategyTier: 3,
+        prefix: 'se-',
+        root: 'ho kopanya (to combine/join)',
+        suffix: '-i',
+        explanation: 'From "ho kopanya" (to combine/join): "se-" (Class 7, instrument) + "kopany-" + "-i". Literally: "that which is combined" — atoms bonded together.',
+        definition: 'A molecule — a combination of atoms bonded together.',
+        partOfSpeech: 'Noun (Class 7)',
+        inspiration: '🇸🇦 Arabic root model: deriving from verb of combination',
+      },
+    ],
+  },
+  virus: {
+    decomposition: {
+      whatItDoes: 'A microscopic infectious agent that invades living cells and causes disease',
+      whatItIsLike: 'An invisible tiny creature that brings pain and sickness',
+      essence: 'A pain-causing tiny organism — too small to see, but devastating in effect',
+      relatedSesothoRoots: ['kokwana (tiny organism/insect)', 'bohloko (pain/suffering)', 'ho lwala (to be sick)', 'ho tshwaya (to infect)', 'ho hlasela (to attack/invade)'],
+    },
+    candidates: [
+      {
+        sesothoWord: 'kokwanahloko',
+        method: 'Semantic Calque',
+        strategyTier: 1,
+        root: 'kokwana (tiny organism) + hloko (from bohloko = pain)',
+        explanation: 'A REAL Sesotho word already in use by native speakers! "kokwana" (tiny organism/insect) + "hloko" (derived from bohloko = pain/suffering). Literally: "the tiny creature that brings pain". This is a perfect example of Sesotho\'s own organic compounding tradition — exactly the kind of word LBOS aims to produce. No borrowed sound, pure meaning.',
+        definition: 'A virus — a microscopic infectious agent that causes disease in living organisms.',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '🌍 Sesotho native tradition — proves the language already has the word-building capacity!',
+      },
+      {
+        sesothoWord: 'sehlaselibohloko',
+        method: 'Compounding',
+        strategyTier: 2,
+        explanation: 'Compound: "se-" (Class 7, instrument/agent) + "hlaseli" (from ho hlasela = to attack/invade) + "bohloko" (pain/sickness). Literally: "the tiny attacker that brings sickness". Emphasizes the invasive nature of viruses.',
+        definition: 'A virus — an invasive microscopic agent that attacks cells and causes illness.',
+        partOfSpeech: 'Noun (Class 7)',
+        inspiration: '🇩🇪 German compound model + native Sesotho roots',
+      },
+      {
+        sesothoWord: 'setshwayi',
+        method: 'Nominalization',
+        strategyTier: 3,
+        prefix: 'se-',
+        root: 'ho tshwaya (to infect/contaminate)',
+        suffix: '-i (agentive)',
+        explanation: 'From "ho tshwaya" (to infect/mark): "se-" (Class 7, agent) + "tshway-" + "-i". Literally: "the thing that infects".',
+        definition: 'A virus — an infectious agent.',
+        partOfSpeech: 'Noun (Class 7)',
+        inspiration: '🇮🇱 Hebrew root derivation model',
+      },
+      {
+        sesothoWord: 'baerase',
+        method: 'Loanword',
+        strategyTier: 5,
+        explanation: '⚠️ Phonetic borrowing of English "virus". Meaningless to a Sesotho speaker. The native word "kokwanahloko" (pain-causing tiny creature) is far superior — it already exists and is widely understood!',
+        definition: 'Virus (borrowed term — not recommended when "kokwanahloko" already exists).',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '⚠️ Last resort — "kokwanahloko" is the native word',
+      }
+    ],
+  },
+  biology: {
+    decomposition: {
+      whatItDoes: 'The scientific study of life and living organisms, including their structure, growth, origin, and evolution',
+      whatItIsLike: 'The study of how things are born, grow, live, and die',
+      essence: 'The science/education of life',
+      relatedSesothoRoots: ['bophelo (life)', 'thuto (study/education)', 'ho phela (to live)', 'ho hola (to grow)'],
+    },
+    candidates: [
+      {
+        sesothoWord: 'thutobophelo',
+        method: 'Semantic Calque',
+        strategyTier: 1,
+        root: 'thuto (study) + bophelo (life)',
+        explanation: 'Direct semantic translation of biology (bios = life, logos = study). Compounded from "thuto" (study/education) + "bophelo" (life). Literally: "study of life". Mirrors Chinese 生物学 (shēngwùxué = "living-thing-study") and German Biologie (which translates to study of life). Self-explanatory and highly educational.',
+        definition: 'Biology — the scientific study of life and living organisms.',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '🇨🇳 Chinese/German semantic compounding model',
+      },
+      {
+        sesothoWord: 'baoloji',
+        method: 'Loanword',
+        strategyTier: 5,
+        explanation: '⚠️ Phonetic borrowing of English "biology". Not recommended when "thutobophelo" is clear, transparent, and direct.',
+        definition: 'Biology (borrowed term — not recommended).',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '⚠️ Last resort — phonetic adaptation',
+      }
+    ],
+  },
+  energy: {
+    decomposition: {
+      whatItDoes: 'The capacity or ability of a physical system to perform work',
+      whatItIsLike: 'The fuel that enables action or motion',
+      essence: 'The capacity for doing work',
+      relatedSesothoRoots: ['matla (power/force/energy)', 'ho sebetsa (to work)'],
+    },
+    candidates: [
+      {
+        sesothoWord: 'matla-mosebetsi',
+        method: 'Compounding',
+        strategyTier: 2,
+        root: 'matla (power) + mosebetsi (work)',
+        explanation: 'Compounded from "matla" (power/force) + "mosebetsi" (work) to differentiate "energy" from simple "force". Literally translates to "power to do work" (the exact physics definition of energy).',
+        definition: 'Energy — the capacity of a physical system to perform work.',
+        partOfSpeech: 'Noun (Class 6)',
+        inspiration: '🇩🇪 German/Bantu compounding model',
+      },
+      {
+        sesothoWord: 'matla',
+        method: 'Semantic Extension',
+        strategyTier: 4,
+        explanation: 'Traditional general term for energy, power, and force. While widely understood, it creates scientific ambiguity if used for all three concepts.',
+        definition: 'Energy (general term).',
+        partOfSpeech: 'Noun (Class 6)',
+        inspiration: '🔄 Traditional semantic extension',
+      },
+      {
+        sesothoWord: 'enertjhi',
+        method: 'Loanword',
+        strategyTier: 5,
+        explanation: '⚠️ Phonetic borrowing of English "energy". Not recommended when "matla-mosebetsi" is descriptive and scientifically precise.',
+        definition: 'Energy (borrowed term — not recommended).',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '⚠️ Last resort',
+      }
+    ],
+  },
+  force: {
+    decomposition: {
+      whatItDoes: 'An influence that causes an object to undergo a change in speed, direction, or shape (a push or pull)',
+      whatItIsLike: 'A push, a pull, or pressure exerted on an object',
+      essence: 'An interaction that changes the motion of an object',
+      relatedSesothoRoots: ['ho hohela (to attract)', 'ho suthisa (to push)', 'tshusumetso (impulse/push)', 'kgatello (pressure)'],
+    },
+    candidates: [
+      {
+        sesothoWord: 'tshusumetso',
+        method: 'Semantic Calque',
+        strategyTier: 1,
+        root: 'ho susumetsa (to push/impel)',
+        explanation: 'Derived from the verb "ho susumetsa" (to impel/push/influence). Class 9 nominalization shifts s→tsh, yielding "tshusumetso" (the act of pushing/impelling). A clean, precise translation for force as a mechanical push.',
+        definition: 'Force — a push or pull exerted on an object.',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '🇨🇳 Chinese/Hebrew semantic model',
+      },
+      {
+        sesothoWord: 'kgatello',
+        method: 'Semantic Extension',
+        strategyTier: 4,
+        root: 'ho hatella (to press down)',
+        explanation: 'Derived from "ho hatella" (to press/force). Means force in the sense of pressure, load, or compression.',
+        definition: 'Force (in the sense of compression/pressure).',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '🔄 Repurposed mechanical term',
+      },
+      {
+        sesothoWord: 'forose',
+        method: 'Loanword',
+        strategyTier: 5,
+        explanation: '⚠️ Phonetic borrowing of English "force". Not recommended.',
+        definition: 'Force (borrowed term — not recommended).',
+        partOfSpeech: 'Noun (Class 9)',
+        inspiration: '⚠️ Last resort',
+      }
+    ],
+  },
+  power: {
+    decomposition: {
+      whatItDoes: 'The rate at which work is done or energy is transferred per unit of time',
+      whatItIsLike: 'The speed or rate at which energy is used',
+      essence: 'Rate of doing work / energy transfer speed',
+      relatedSesothoRoots: ['matla (energy/power)', 'sekgahla (rate/speed)', 'tshebediso (usage)'],
+    },
+    candidates: [
+      {
+        sesothoWord: 'sekgahla sa matla',
+        method: 'Compounding',
+        strategyTier: 2,
+        explanation: 'Compounded from "sekgahla" (rate/speed) + "sa" (of) + "matla" (energy/power). Literally: "rate of energy". This precisely matches the scientific definition of power (Energy/Time).',
+        definition: 'Power — the rate of doing work or transferring energy.',
+        partOfSpeech: 'Noun phrase (Class 7)',
+        inspiration: '🇩🇪 German compounding model',
+      },
+      {
+        sesothoWord: 'matla a tshebediso',
+        method: 'Compounding',
+        strategyTier: 2,
         explanation: 'Compounded from "matla" (power) + "a" (of) + "tshebediso" (use/operation). Literally: "operational power". Used to describe mechanical or electrical power in action.',
         definition: 'Power (in operational or mechanical context).',
         partOfSpeech: 'Noun phrase (Class 6)',
@@ -773,7 +968,8 @@ const STEM_FALLBACKS: Record<string, { decomposition: ConceptDecomposition; cand
         method: 'Loanword',
         strategyTier: 5,
         explanation: '⚠️ Phonetic borrowing of English "power". Not recommended.',
-        definition: 'Power (borrowed term)'
+        definition: 'Power (borrowed term)',
+        partOfSpeech: 'Noun'
       }
     ]
   }

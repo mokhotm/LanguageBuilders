@@ -1,4 +1,4 @@
-import { generateLLMCompletion } from './llmProvider';
+import { generateLLMCompletion } from './llmProvider.js';
 
 export interface DefinitionStack {
   primaryDefinition: string;
