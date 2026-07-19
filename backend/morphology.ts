@@ -781,6 +781,21 @@ definition: 'A molecule — the smallest unit of a chemical compound that retain
       },
     ],
   },
+  export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
+  const cleanWord = englishWord.toLowerCase().trim();
+
+  // Check if we have high-quality curated entries (only if no user hint and no excludeWords)
+  if (!userHint && (!excludeWords || excludeWords.length === 0) && STEM_FALLBACKS[cleanWord]) {
+    const entry = STEM_FALLBACKS[cleanWord];
+    return {
+      candidates: entry.candidates.map(c => ({
+        ...c,
+        sesothoWord: postProcessSpelling(c.sesothoWord),
+      })),
+      conceptDecomposition: entry.decomposition,
+    };
+  }
+
   // ── AI-Powered Coining via LLM Provider (Ollama Local / Gemini Cloud) ──
   try {
     const defStack = await fetchDefinitionStack(cleanWord, GEMINI_API_KEY);
