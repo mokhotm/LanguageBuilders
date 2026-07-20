@@ -5,8 +5,7 @@
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "types": [],
-    "typeRoots": ["./node_modules/@types"],
+    "types": ["react", "react-dom", "canvas-confetti"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
