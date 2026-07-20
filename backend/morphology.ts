@@ -34,6 +34,33 @@ export interface CoiningCandidate {
   inspiration?: string; // e.g. "Chinese model: 电脑 = electric brain"
 }
 
+
+export function isNaturalSesothoCandidate(word: string): boolean {
+  if (!word) return false;
+  const w = word.toLowerCase().trim();
+  if (w.startsWith('sesecomp') || w.startsWith('matlakomp') || w.startsWith('secomp')) {
+    return false;
+  }
+  return true;
+}
+
+export function getStrategyTier(method: string): 1 | 2 | 3 | 4 | 5 {
+  switch (method) {
+    case 'Semantic Calque':
+    case 'User Suggestion':
+      return 1;
+    case 'Compounding':
+      return 2;
+    case 'Nominalization':
+      return 3;
+    case 'Semantic Extension':
+      return 4;
+    case 'Loanword':
+    default:
+      return 5;
+  }
+}
+
 export interface CoinResult {
   candidates: CoiningCandidate[];
   conceptDecomposition: ConceptDecomposition;
