@@ -103,7 +103,7 @@ export async function generateLLMCompletion(
     ? `${options.systemPrompt}\n\nUSER PROMPT:\n${prompt}`
     : prompt;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const response = await axios.post(url, {
     contents: [{ parts: [{ text: fullPrompt }] }],
     generationConfig: {

@@ -781,7 +781,9 @@ definition: 'A molecule — the smallest unit of a chemical compound that retain
       },
     ],
   },
-  export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
+};
+
+export async function coinWord(englishWord: string, userHint?: string, excludeWords?: string[]): Promise<CoinResult> {
   const cleanWord = englishWord.toLowerCase().trim();
 
   // Check if we have high-quality curated entries (only if no user hint and no excludeWords)
