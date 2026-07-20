@@ -790,9 +790,10 @@ const STEM_FALLBACKS: Record<string, { decomposition: ConceptDecomposition; cand
         sesothoWord: 'matla a tshebediso',
         method: 'Compounding',
         strategyTier: 2,
-definition: 'A molecule — the smallest unit of a chemical compound that retains its chemical properties.',
-        partOfSpeech: 'Noun (Class 9)',
-        inspiration: '🇨🇳 Chinese: 分子 = divide-particle',
+        explanation: 'Compounded from "matla" (power) + "a" (of) + "tshebediso" (use/operation). Literally: "operational power". Used to describe mechanical or electrical power in action.',
+        definition: 'Power (in operational or mechanical context).',
+        partOfSpeech: 'Noun phrase (Class 6)',
+        inspiration: '🇩🇪 German compounding model',
       },
       {
         sesothoWord: 'sekopanyi',
