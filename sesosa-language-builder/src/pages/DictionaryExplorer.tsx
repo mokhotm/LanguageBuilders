@@ -275,7 +275,7 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
       
       {/* Header Panel */}
-      <div className="glass-panel flex-between" style={{ padding: '2rem', marginBottom: '2rem', gap: '1rem', flexWrap: 'wrap' }}>
+      <div className="glass-panel flex-between" style={{ padding: '1.75rem', marginBottom: '2rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Buka ya Mantswe a Sesotho</h1>
           <p style={{ color: 'var(--text-muted)' }}>Batla, vouta kapa u hlahlobe mantswe a bopilwe bakeng sa dithuto tsa STEM.</p>
@@ -294,7 +294,7 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
 
       {/* Word of the Day Showcase */}
       <div className="glass-panel glass-card-glow flex-between gap-lg" style={{ 
-        padding: '2.25rem', 
+        padding: '1.75rem', 
         marginBottom: '2.5rem', 
         background: 'radial-gradient(circle at top right, rgba(99,102,241,0.06), transparent), var(--bg-surface)',
         borderColor: 'rgba(99, 102, 241, 0.25)',
@@ -590,7 +590,7 @@ export default function DictionaryExplorer({ user, token }: DictionaryExplorerPr
           ) : (
             <>
               {/* Top Pagination Control Bar */}
-              <div className="glass-panel flex-between" style={{ padding: '0.85rem 1.25rem', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="glass-panel flex-between" style={{ padding: '1rem 1.75rem', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   E bontsha <strong style={{ color: '#fff' }}>{((page - 1) * limit) + 1}</strong> - <strong style={{ color: '#fff' }}>{Math.min(page * limit, totalWords)}</strong> ho mantsoe a <strong style={{ color: 'var(--primary)' }}>{totalWords.toLocaleString()}</strong>
                 </div>

@@ -154,10 +154,9 @@ h1, h2, h3, h4, h5 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 2rem;
-  margin: 1.5rem auto;
-  max-width: 1400px;
-  width: calc(100% - 3rem);
+  padding: 1.25rem 1.75rem;
+  margin: 1.5rem 0;
+  width: 100%;
 }
 
 .nav-logo {
